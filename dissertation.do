@@ -34,82 +34,96 @@ Contents:
  Step 9,10,11 are regression results. 9 being plain vanilla, 
                                       10 and 11 include state dependency
 */
-
 /*******************************************************************************
  Step1: Non Metal; Source: FRED
 *******************************************************************************/
+
 *1)Crude Oil
 import delimited "$Data/Non Metal FRED/CrudeOil.csv", clear 
 ren dcoilwtico crudeoil
 
-gen year = real(substr(date, 1, 4))
-gen month = real(substr(date, 6, 2))
-gen day = real(substr(date, 9, 2))
+gen year = real(substr(date, 1, 4)) // extract the year from the date variable
+gen month = real(substr(date, 6, 2)) // extract the month from the date variable
+gen day = real(substr(date, 9, 2)) // extract the day from the date variable
 
-replace crudeoil=crudeoil[_n-1] if crudeoil==. //fill missing values with the previous values
+replace crudeoil=crudeoil[_n-1] if crudeoil==. // fill missing values with the previous values
 
-by year month, sort: gen byte last_forecast = (_n == _N)
+by year month, sort: gen byte last_forecast = (_n == _N) // create a variable indicating the last observation per year and month
 
-drop if last_forecast != 1
+drop if last_forecast != 1 // drop all but the last observation per year and month
 
-ren date modate 
+ren date modate // rename the date variable to modate
 
-gen date = ym(year, month)
-format date %tm
-keep date crudeoil
-order date crudeoil
+gen date = ym(year, month) // create a new date variable combining year and month
+format date %tm // format the new date variable as a month
 
-save "$Data/Refined Data/crudeoil.dta", replace 
+keep date crudeoil // keep only the date and crudeoil variables
+order date crudeoil // order the data by date
+
+save "$Data/Refined Data/crudeoil.dta", replace // save the refined data to a new file
 
 *2)Natural Gas 
 import delimited "$Data/Non Metal FRED/NaturalGas.csv", clear 
 ren pngaseuusdm naturalgas
 
-gen year = real(substr(date, 1, 4))
-gen month = real(substr(date, 6, 2))
-gen day = real(substr(date, 9, 2))
+gen year = real(substr(date, 1, 4)) 
+gen month = real(substr(date, 6, 2)) 
+gen day = real(substr(date, 9, 2)) 
 
-replace naturalgas=naturalgas[_n-1] if naturalgas==.
+replace naturalgas=naturalgas[_n-1] if naturalgas==. 
 
-by year month, sort: gen byte last_forecast = (_n == _N)
+by year month, sort: gen byte last_forecast = (_n == _N) 
 
-drop if last_forecast != 1
+drop if last_forecast != 1 
 
 ren date modate 
 
-gen date = ym(year, month)
-format date %tm
-keep date naturalgas
-order date naturalgas
+gen date = ym(year, month) 
+format date %tm 
+
+keep date naturalgas 
+order date naturalgas 
 
 save "$Data/Refined Data/naturalgas.dta", replace 
 
 /*******************************************************************************
  Step2: Agriculture; Source: Macro Trends
 *******************************************************************************/
+
 *1)Coffee
 import delimited "$Data/Agriculture Macro Trends/coffee.csv", clear 
 
-drop in 1/8
-foreach var of varlist * {
-    rename `var' `=strtoname(`var'[1])'
-}
-drop in 1
-gen year = real(substr(date, 1, 4))
-gen month = real(substr(date, 6, 2))
-gen day = real(substr(date, 9, 2))
-destring _value, replace 
-replace _value=_value[_n-1] if _value==.
-by year month, sort: gen byte last_forecast = (_n == _N)
-drop if last_forecast != 1
-ren date modate 
-gen date = ym(year, month)
-format date %tm
-keep date _value
-order date _value
+drop in 1/8 // drop the first 8 rows
 
-ren _value coffee
-save "$Data/Refined Data/coffee.dta", replace 
+foreach var of varlist * {
+    rename `var' `=strtoname(`var'[1])' // rename variables to remove any spaces or special characters
+}
+
+drop in 1 // drop the first row
+
+gen year = real(substr(date, 1, 4)) // extract the year from the date variable
+gen month = real(substr(date, 6, 2)) // extract the month from the date variable
+gen day = real(substr(date, 9, 2)) // extract the day from the date variable
+
+destring _value, replace // convert the _value variable to numeric
+
+replace _value=_value[_n-1] if _value==. // fill missing values with the previous values
+
+by year month, sort: gen byte last_forecast = (_n == _N) // create a variable indicating the last observation per year and month
+
+drop if last_forecast != 1 // drop all but the last observation per year and month
+
+ren date modate // rename the date variable to modate
+
+gen date = ym(year, month) // create a new date variable combining year and month
+format date %tm // format the new date variable as a month
+
+keep date _value // keep only the date and _value variables
+order date _value // order the data by date
+
+ren _value coffee // rename the _value variable to coffee
+
+save "$Data/Refined Data/coffee.dta", replace // save the refined data to a new file
 
 *2)Corn
 import delimited "$Data/Agriculture Macro Trends/corn.csv", clear 
@@ -258,31 +272,36 @@ save "$Data/Refined Data/wheat.dta", replace
 /******************************************************************************
  Step3: Metals; Source: Capital IQ Pro 
 *******************************************************************************/
+/*******************************************************************************
+ Step3: Metals; Source: Capital IQ Pro
+*******************************************************************************/
 
 *1)Aluminium
-import excel "$Data/Metals Capital IQ Pro/Aluminum.xls", sheet("Data") clear
-drop in 1/9
-drop in 511
-keep A C
+
+import excel "$Data/Metals Capital IQ Pro/Aluminum.xls", sheet("Data") clear // Import Aluminum data from Excel
+drop in 1/9 // Drop the first 9 rows, which contain irrelevant information
+drop in 511 // Drop the 511th row, which contains irrelevant information
+keep A C // Keep only columns A and C
+
+* Rename variables to remove any spaces or special characters
 foreach var of varlist * {
     rename `var' `=strtoname(`var'[1])'
 }
-drop in 1
-split Date, parse(/) 
-drop Date2
-destring Date1 Date3, replace 
-ren Date1 month 
+drop in 1 // Drop the first row, which contains column descriptions
+split Date, parse(/) // Split the Date variable into separate month and year variables
+drop Date2 // Drop the unnecessary Date2 variable
+destring Date1 Date3, replace // Convert Date1 and Date3 variables to numeric format
+ren Date1 month // Rename Date1 variable to month and Date3 variable to year
 ren Date3 year
-gen date = ym(year, month)
-format date %tm
-ren LME_Aluminium_99_7__Cash____tonn value
-destring value, replace 
-keep date value
-order date value
-drop if date==.
-sort date 
-ren value aluminium
-save "$Data/Refined Data/aluminium.dta", replace 
+gen date = ym(year, month) // Create a new date variable combining year and month
+format date %tm // Format the new date variable as a month
+ren LME_Aluminium_99_7__Cash____tonn value // Rename the value variable to aluminium
+destring value, replace // Convert the value variable to numeric format
+keep date value // Keep only the date and value (aluminium) variables
+order date value // Order the data by date
+drop if date == . // Drop any observations where date is missing
+sort date // Sort the data by date
+save "$Data/Refined Data/aluminium.dta", replace // Save the refined data to a new file called "aluminium.dta"
 
 *2)Copper
 import excel "$Data/Metals Capital IQ Pro/Copper.xls", sheet("Data") clear
@@ -490,7 +509,7 @@ save "$Data/Refined Data/zinc.dta", replace
 /*******************************************************************************
  Step4: Asset Prices Merge 
 *******************************************************************************/
-*merge 
+*merge all the assets  
 
 use "$Data/Refined Data/aluminium.dta", clear 
 foreach v in copper gold lead nickel platinum silver tin zinc coffee corn cotton crudeoil naturalgas oats soybean sugar{
@@ -506,6 +525,8 @@ use "$Data/Refined Data/assetprices.dta", clear
  Step5: Instruments Data 
 *******************************************************************************/
 *Instruments Gertler &Karadi
+
+* Import instruments and perform data cleaning
 import delimited "$Data/Gertler Karadi Code and Data/data/factor_data.csv", clear 
 gen date = ym(year, month)
 format date %tm
@@ -518,6 +539,8 @@ save "$Data/Refined Data/instruments.dta", replace
  Step6: Interest Rate Data 
 *******************************************************************************/
 *Interest rates Gertler &Karadi
+
+* Import interest rates and perform data cleaning
 import delimited "$Data/Gertler Karadi Code and Data/data/VAR_data.csv", clear
 gen date = ym(year, month)
 format date %tm
@@ -530,12 +553,15 @@ save "$Data/Refined Data/interestrate.dta", replace
 /*******************************************************************************
  Step7: Liquidity Data 
 *******************************************************************************/
+
+* Import M2 and GDP data from FRED datasets
 import delimited "$Data/Refined Data/M2.csv", clear
 save "$Data/Refined Data/M2.dta", replace
 
 import delimited "$Data/Refined Data/GDP.csv", clear 
 save "$Data/Refined Data/GDP.dta", replace 
 
+* merge and clean the data
 use "$Data/Refined Data/M2.dta", clear 
 merge 1:1 date using "$Data/Refined Data/GDP.dta"
 drop if _merge ==2
@@ -551,9 +577,11 @@ order date
 ren mabmm201usq189s m2
 tsset date, monthly
 
+* Calculate gdp growth and M2 growth rates 
 gen gdpgrowth = ((gdp-L3.gdp)/(L3.gdp))*100
 gen m2growth = ((m2-L3.m2)/(L3.m2))*100
 
+* mark excess liquidity as 1 if m2 growth is greater gdp growth 
 gen excessliq = 0
 replace excessliq = 1 if m2growth > gdpgrowth
 drop if year <1984
@@ -568,7 +596,7 @@ save "$Data/Refined Data/liq.dta", replace
 /*******************************************************************************
  Step8: Final Merge
 *******************************************************************************/
-*Final Merge 
+*Final Merge (Merge all the above mentioned datasets)
 use "$Data/Refined Data/interestrate.dta", clear 
 merge 1:1 date using "$Data/Refined Data/instruments.dta"
 drop _merge 
@@ -589,66 +617,68 @@ use "$Data/essayfinal.dta", clear
  Step9: LP-IV 
 *******************************************************************************/
 clear all
+
+* Set the global macro "Data" to the data directory path
 global Data "/Users/Amartya/Desktop/Econ/Dissertation/Data"
 
-*foreach j in mp1_tc ff4_tc ed2_tc ed3_tc ed4_tc {
+* Loop over the variable names
 foreach v in aluminium copper gold lead nickel platinum silver tin zinc coffee corn cotton crudeoil naturalgas oats soybean sugar {
-use "$Data/essayfinal.dta", clear 
-tsset date 
+    * Import the dataset
+    use "$Data/essayfinal.dta", clear 
+    tsset date 
 
-*aluminium copper gold lead nickel platinum silver tin zinc coffee corn cotton crudeoil naturalgas oats soybean sugar 
-gen ASSET= ln(`v') 
-gen INTR= interestrate  
-gen INSTR= ed2_tc 
-gen INTRCHG= D.INTR
+    * Create variable names using the loop variable "v"
+    gen ASSET = ln(`v') 
+    gen INTR = interestrate  
+    gen INSTR = ed2_tc 
+    gen INTRCHG = D.INTR
 
-keep if ASSET != . 
-keep if INTR != .
-keep if INSTR != .
+    * Keep observations with valid values
+    keep if ASSET != . 
+    keep if INTR != .
+    keep if INSTR != .
 
-* Choose impulse response horizon
-local hmax= 60
-local lmax= 4
+    * Choose impulse response horizon
+    local hmax = 60
+    local lmax = 4
 
-* Generate LHS variables for the LPs 
-* Cumulative
-qui forvalues h = 0/`hmax' {
-	gen ASSET`h' = F`h'.ASSET
-	
-} 
+    * Generate LHS variables for the LPs 
+    * Cumulative
+    qui forvalues h = 0/`hmax' {
+        gen ASSET`h' = F`h'.ASSET
+    } 
 
-* LPIV
-drop eststo 
-cap drop b u d Months Zero
-gen Months = _n-1 if _n<=`hmax'
-gen Zero = 0 if _n<=`hmax'
-gen b=0
-gen u=0
-gen d=0
-qui forvalues h = 1/`hmax' {
-	ivregress gmm ASSET`h' L(1/`lmax').INTR L(1/`lmax').ASSET (INTRCHG = INSTR), vce(hac nwest)
-replace b=_b[INTRCHG] if _n == `h'
-replace u=_b[INTRCHG] + 1.645* _se[INTRCHG] if _n==`h'
-replace d=_b[INTRCHG] - 1.645* _se[INTRCHG] if _n==`h'
-eststo 
+    * LPIV
+    drop eststo 
+    cap drop b u d Months Zero
+    gen Months = _n-1 if _n <= `hmax'
+    gen Zero = 0 if _n <= `hmax'
+    gen b = 0
+    gen u = 0
+    gen d = 0
+    qui forvalues h = 1/`hmax' {
+        ivregress gmm ASSET`h' L(1/`lmax').INTR L(1/`lmax').ASSET (INTRCHG = INSTR), vce(hac nwest)
+        replace b = _b[INTRCHG] if _n == `h'
+        replace u = _b[INTRCHG] + 1.645 * _se[INTRCHG] if _n == `h'
+        replace d = _b[INTRCHG] - 1.645 * _se[INTRCHG] if _n == `h'
+        eststo 
+    }
+
+    * Use this command if you want a summary of the LP coefficients
+    nois esttab, se nocons keep(INTRCHG)
+
+    twoway ///
+    (rarea u d Months,  ///
+    fcolor(purple%15) lcolor(gs13) lw(none) lpattern(solid)) ///
+    (line b Months, lcolor(purple) lpattern(solid) lwidth(thick)) ///
+    (line Zero Months, lcolor(black)), legend(off) ///
+    title("Responses of `v' price to monetary shock", color(black) size(med)) ///
+    subtitle("IV (solid purple)", color(black) size(small)) ///
+    ytitle("Percent", size(medsmall)) xtitle("Months", size(medsmall)) ///
+    note("Notes: 90 percent confidence bands") ///
+    graphregion(color(white)) plotregion(color(white))
+    graph save "Graph" "$Data/Graphs/`v'.gph", replace 
 }
-
-/* Use this command if you want a summary of the LP coefficients*/
-nois esttab, se nocons keep(INTRCHG)
-
-twoway ///
-(rarea u d  Months,  ///
-fcolor(purple%15) lcolor(gs13) lw(none) lpattern(solid)) ///
-(line b Months, lcolor(purple) lpattern(solid) lwidth(thick)) ///
-(line Zero Months, lcolor(black)), legend(off) ///
-title("Responses of `v' price to monetary shock", color(black) size(med)) ///
-subtitle("IV (solid purple)", color(black) size(small)) ///
-ytitle("Percent", size(medsmall)) xtitle("Months", size(medsmall)) ///
-note("Notes: 90 percent confidence bands") ///
-graphregion(color(white)) plotregion(color(white))
-graph save "Graph" "$Data/Graphs/`v'.gph", replace 
-}
-*}
 
 graph combine "$Data/Graphs/aluminium.gph" "$Data/Graphs/copper.gph" "$Data/Graphs/gold.gph" ///
 "$Data/Graphs/lead.gph" "$Data/Graphs/nickel.gph" "$Data/Graphs/platinum.gph" "$Data/Graphs/silver.gph" ///
@@ -656,7 +686,6 @@ graph combine "$Data/Graphs/aluminium.gph" "$Data/Graphs/copper.gph" "$Data/Grap
 "$Data/Graphs/naturalgas.gph" "$Data/Graphs/oats.gph" "$Data/Graphs/soybean.gph" "$Data/Graphs/sugar.gph"
 
 graph save "Graph" "$Data/Graphs/combination.gph", replace 
-*aluminium copper gold lead nickel platinum silver tin zinc coffee corn cotton crudeoil naturalgas oats soybean sugar
 
 estimates table aluminium copper gold lead nickel platinum silver tin zinc coffee corn cotton///
 crudeoil naturalgas oats soybean sugar, se varlabel
@@ -668,164 +697,168 @@ putdocx save myresults.docx, replace
 /*******************************************************************************
  Step10: Interest Rate State Dependency 
 *******************************************************************************/
-
 clear all
+
+* Set the directory where the data is located
 global Data "/Users/Amartya/Desktop/Econ/Dissertation/Data"
 
+* Iterate over each variable of interest
 foreach v in aluminium copper gold lead nickel platinum silver tin zinc coffee corn cotton crudeoil naturalgas oats soybean sugar {
-use "$Data/essayfinal.dta", clear 
-tsset date 
+    use "$Data/essayfinal.dta", clear 
+    tsset date 
 
-*aluminium copper gold lead nickel platinum silver tin zinc coffee corn cotton crudeoil naturalgas oats soybean sugar 
-gen ASSET= ln(`v') 
-gen INTR= interestrate  
-gen INSTR= ed2_tc 
-gen INTRCHG= D.INTR
+    * Generate variables for analysis
+    gen ASSET = ln(`v') 
+    gen INTR = interestrate  
+    gen INSTR = ed2_tc 
+    gen INTRCHG = D.INTR
 
-keep if ASSET != . 
-keep if INTR != .
-keep if INSTR != .
+    * Remove missing values
+    keep if ASSET != . 
+    keep if INTR != .
+    keep if INSTR != .
 
-gen INSTRP = max(0,INSTR) 
-gen INSTRN = min(0,INSTR)
-gen INTRP = cond(INTRCHG >= 0 , INTRCHG, 0)
-gen INTRN = cond(INTRCHG < 0 , INTRCHG, 0)
+    * Split the instrumental variable into positive and negative components
+    gen INSTRP = max(0, INSTR) 
+    gen INSTRN = min(0, INSTR)
+    gen INTRP = cond(INTRCHG >= 0, INTRCHG, 0)
+    gen INTRN = cond(INTRCHG < 0, INTRCHG, 0)
 
-local hmax = 60
-local lmax = 4
+    * Set the maximum horizon and lag length
+    local hmax = 60
+    local lmax = 4
 
-qui forvalues h = 0/`hmax' {
-	gen ASSET`h' = F`h'.ASSET
+    * Generate lagged variables for the asset price
+    qui forvalues h = 0/`hmax' {
+        gen ASSET`h' = F`h'.ASSET
+    }
+
+    eststo clear 
+    cap drop bp bn up un dp dn Months Zero
+    gen Months = _n-1 if _n <= `hmax'
+    gen Zero = 0 if _n <= `hmax'
+    gen bp = 0 
+    gen bn = 0 
+    gen up = 0
+    gen un = 0 
+    gen dp = 0
+    gen dn = 0
+
+    * Perform instrumental variable regression for positive and negative shocks
+    qui forvalues h = 1/`hmax' {
+        ivregress gmm ASSET`h' L(1/`lmax').INTR L(1/`lmax').ASSET (INTRP INTRN = INSTRP INSTRN), vce(hac nwest)
+        replace bp = _b[INTRP] if _n == `h'
+        replace up = _b[INTRP] + 1.645* _se[INTRP] if _n == `h'
+        replace dp = _b[INTRP] - 1.645* _se[INTRP] if _n == `h'
+        replace bn = _b[INTRN] if _n == `h'
+        replace un = _b[INTRN] + 1.645* _se[INTRN] if _n == `h'
+        replace dn = _b[INTRN] - 1.645* _se[INTRN] if _n == `h'
+        eststo
+    }
+
+    * Generate a plot of the impulse response function
+    twoway ///
+        (rarea up dp Months, fcolor(green%30) lcolor(gs13) lw(none) lpattern(solid)) ///
+        (rarea un dn Months, fcolor(red%30) lcolor(gs13) lw(none) lpattern(solid)) ///
+        (line bp Months, lcolor(green) lpattern(solid) lwidth(thick)) ///
+        (line bn Months, lcolor(red) lpattern(solid) lwidth(thick)) ///
+        (line Zero Months, lcolor(black)), legend(off) ///
+        title("Responses of `v' price to monetary shock", color(black) size(med)) ///
+        subtitle("Green - Positive Shocks; Red - Negative Shocks", color(black) size(small)) ///
+        ytitle("Percent", size(medsmall)) xtitle("Months", size(medsmall)) ///
+        note("Notes: 90 percent confidence bands") ///
+        graphregion(color(white)) plotregion(color(white))
+    graph save "Graph" "$Data/Graphs/state_`v'.gph", replace 
 }
 
-eststo clear 
-cap drop bp bn up un dp dn Months Zero
-gen Months = _n-1 if _n <= `hmax'
-gen Zero = 0 if _n <= `hmax'
-gen bp = 0 
-gen bn = 0 
-gen up = 0
-gen un = 0 
-gen dp = 0
-gen dn = 0
-
-qui forvalues h = 1/`hmax' {
-	ivregress gmm ASSET`h' L(1/`lmax').INTR L(1/`lmax').ASSET (INTRP INTRN = INSTRP INSTRN), vce(hac nwest)
-replace bp=_b[INTRP] if _n == `h'
-replace up=_b[INTRP] + 1.645* _se[INTRP] if _n==`h'
-replace dp=_b[INTRP] - 1.645* _se[INTRP] if _n==`h'
-replace bn=_b[INTRN] if _n == `h'
-replace un=_b[INTRN] + 1.645* _se[INTRN] if _n==`h'
-replace dn=_b[INTRN] - 1.645* _se[INTRN] if _n==`h'
-eststo
-}
-
-nois esttab, se nocons keep(INTRP INTRN)
-
-twoway ///
-(rarea up dp  Months, fcolor(green%30) lcolor(gs13) lw(none) lpattern(solid)) ///
-(rarea un dn  Months, fcolor(red%30) lcolor(gs13) lw(none) lpattern(solid)) ///
-(line bp Months, lcolor(green) lpattern(solid) lwidth(thick)) ///
-(line bn Months, lcolor(red) lpattern(solid) lwidth(thick)) ///
-(line Zero Months, lcolor(black)), legend(off) ///
-title("Responses of `v' price to monetary shock", color(black) size(med)) ///
-subtitle("Green - Positive Shocks; Red - Negative Shocks", color(black) size(small)) ///
-ytitle("Percent", size(medsmall)) xtitle("Months", size(medsmall)) ///
-note("Notes: 90 percent confidence bands") ///
-graphregion(color(white)) plotregion(color(white))
-graph save "Graph" "$Data/Graphs/state_`v'.gph", replace 
-}
-
+* Combine the individual plots into one
 graph combine "$Data/Graphs/state_aluminium.gph" "$Data/Graphs/state_copper.gph" ///
 "$Data/Graphs/state_gold.gph" "$Data/Graphs/state_lead.gph" "$Data/Graphs/state_nickel.gph" ///
 "$Data/Graphs/state_platinum.gph" "$Data/Graphs/state_silver.gph" "$Data/Graphs/state_tin.gph" ///
 "$Data/Graphs/state_zinc.gph" "$Data/Graphs/state_coffee.gph" "$Data/Graphs/state_crudeoil.gph" ///
 "$Data/Graphs/state_naturalgas.gph" "$Data/Graphs/state_oats.gph" "$Data/Graphs/state_soybean.gph" ///
 "$Data/Graphs/state_sugar.gph" 
-
 graph save "Graph" "$Data/Graphs/state_combination.gph", replace 
 
 /*******************************************************************************
  Step 11: Liquidity State Dependency 
 *******************************************************************************/
 foreach v in aluminium copper gold lead nickel platinum silver tin zinc coffee corn cotton crudeoil naturalgas oats soybean sugar {
-use "$Data/essayfinal.dta", clear 
-tsset date 
+    use "$Data/essayfinal.dta", clear 
+    tsset date 
 
-*aluminium copper gold lead nickel platinum silver tin zinc coffee corn cotton crudeoil naturalgas oats soybean sugar 
-gen ASSET= ln(`v') 
-gen INTR= interestrate  
-gen INSTR= ed2_tc 
-gen INTRCHG= D.INTR
+	* Generate variables for analysis
+    gen ASSET = ln(`v') 
+    gen INTR = interestrate  
+    gen INSTR = ed2_tc 
+    gen INTRCHG = D.INTR
 
-keep if ASSET != . 
-keep if INTR != .
-keep if INSTR != .
+	* Remove missing values
+    keep if ASSET != . 
+    keep if INTR != .
+    keep if INSTR != .
 
-gen INTRE = 0
-gen INTRL = 0
-replace  INTRE = INTR if liq==1
-replace  INTRL = INTR if liq==0
-gen INSTRE = 0
-gen INSTRL = 0
-replace  INSTRE = INSTR if liq==1
-replace  INSTRL = INSTR if liq==0 
+	* Split the instrumental variable into binary components
+    gen INTRE = 0
+    gen INTRL = 0
+    replace INTRE = INTR if liq == 1
+    replace INTRL = INTR if liq == 0
+    gen INSTRE = 0
+    gen INSTRL = 0
+    replace INSTRE = INSTR if liq == 1
+    replace INSTRL = INSTR if liq == 0 
 
-local hmax = 60
-local lmax = 4
+	* Set the maximum horizon and lag length
+    local hmax = 60
+    local lmax = 4
 
-qui forvalues h = 0/`hmax' {
-	gen ASSET`h' = F`h'.ASSET
+	* Generate lagged variables for the asset price
+    qui forvalues h = 0/`hmax' {
+        gen ASSET`h' = F`h'.ASSET
+    }
+
+    eststo clear 
+    cap drop be bl ue ul de dl Months Zero
+    gen Months = _n-1 if _n <= `hmax'
+    gen Zero = 0 if _n <= `hmax'
+    gen be = 0 
+    gen bl = 0 
+    gen ue = 0
+    gen ul = 0 
+    gen de = 0
+    gen dl = 0
+
+	* Perform instrumental variable regression for positive and negative shocks
+    qui forvalues h = 1/`hmax' {
+        ivregress gmm ASSET`h' L(1/`lmax').INTR L(1/`lmax').ASSET (INTRE INTRL = INSTRE INSTRL), vce(hac nwest)
+        replace be = _b[INTRE] if _n == `h'
+        replace ue = _b[INTRE] + 1.645* _se[INTRE] if _n == `h'
+        replace de = _b[INTRE] - 1.645* _se[INTRE] if _n == `h'
+        replace bl = _b[INTRL] if _n == `h'
+        replace ul = _b[INTRL] + 1.645* _se[INTRL] if _n == `h'
+        replace dl = _b[INTRL] - 1.645* _se[INTRL] if _n == `h'
+        eststo
+    }
+
+	* Generate a plot of the impulse response function
+    twoway ///
+        (rarea ue de Months, fcolor(green%30) lcolor(gs13) lw(none) lpattern(solid)) ///
+        (rarea ul dl Months, fcolor(red%30) lcolor(gs13) lw(none) lpattern(solid)) ///
+        (line be Months, lcolor(green) lpattern(solid) lwidth(thick)) ///
+        (line bl Months, lcolor(red) lpattern(solid) lwidth(thick)) ///
+        (line Zero Months, lcolor(black)), legend(off) ///
+        title("Responses of `v' price to monetary shock", color(black) size(med)) ///
+        subtitle("Green - Easy Liquidity State; Red - Tight Liquidity State", color(black) size(small)) ///
+        ytitle("Percent", size(medsmall)) xtitle("Months", size(medsmall)) ///
+        note("Notes: 90 percent confidence bands") ///
+        graphregion(color(white)) plotregion(color(white))
+    graph save "Graph" "$Data/Graphs/liquidity_`v'.gph", replace 
 }
 
-eststo clear 
-cap drop be bl ue ul de dl Months Zero
-gen Months = _n-1 if _n <= `hmax'
-gen Zero = 0 if _n <= `hmax'
-gen be = 0 
-gen bl = 0 
-gen ue = 0
-gen ul = 0 
-gen de = 0
-gen dl = 0
-
-qui forvalues h = 1/`hmax' {
-	ivregress gmm ASSET`h' L(1/`lmax').INTR L(1/`lmax').ASSET (INTRE INTRL = INSTRE INSTRL), vce(hac nwest)
-replace be=_b[INTRE] if _n == `h'
-replace ue=_b[INTRE] + 1.645* _se[INTRE] if _n==`h'
-replace de=_b[INTRE] - 1.645* _se[INTRE] if _n==`h'
-replace bl=_b[INTRL] if _n == `h'
-replace ul=_b[INTRL] + 1.645* _se[INTRL] if _n==`h'
-replace dl=_b[INTRL] - 1.645* _se[INTRL] if _n==`h'
-eststo
-}
-
-nois esttab, se nocons keep(INTRE INTRL)
-
-twoway ///
-(rarea ue de  Months, fcolor(blue%30) lcolor(gs13) lw(none) lpattern(solid)) ///
-(rarea ul dl  Months, fcolor(yellow%30) lcolor(gs13) lw(none) lpattern(solid)) ///
-(line be Months, lcolor(blue) lpattern(solid) lwidth(thick)) ///
-(line bl Months, lcolor(yellow) lpattern(solid) lwidth(thick)) ///
-(line Zero Months, lcolor(black)), legend(off) ///
-title("Responses of `v' price to monetary shock", color(black) size(med)) ///
-subtitle("Blue - Excess Liquidity; Yellow - Lack of Liquidity", color(black) size(small)) ///
-ytitle("Percent", size(medsmall)) xtitle("Months", size(medsmall)) ///
-note("Notes: 90 percent confidence bands") ///
-graphregion(color(white)) plotregion(color(white))
-graph save "Graph" "$Data/Graphs/liq_`v'.gph", replace 
-}
-
-graph combine "$Data/Graphs/liq_aluminium.gph" "$Data/Graphs/liq_copper.gph" ///
-"$Data/Graphs/liq_gold.gph" "$Data/Graphs/liq_lead.gph" "$Data/Graphs/liq_nickel.gph" ///
-"$Data/Graphs/liq_platinum.gph" "$Data/Graphs/liq_silver.gph" "$Data/Graphs/liq_tin.gph" ///
-"$Data/Graphs/liq_zinc.gph" "$Data/Graphs/liq_coffee.gph" "$Data/Graphs/liq_crudeoil.gph" ///
-"$Data/Graphs/liq_naturalgas.gph" "$Data/Graphs/liq_oats.gph" "$Data/Graphs/liq_soybean.gph" ///
-"$Data/Graphs/liq_sugar.gph" 
-
-graph save "Graph" "$Data/Graphs/liq_combination.gph", replace 
-
-
-/*******************************************************************************
-                                       End
-*******************************************************************************/
+graph combine "$Data/Graphs/liquidity_aluminium.gph" "$Data/Graphs/liquidity_copper.gph" ///
+"$Data/Graphs/liquidity_gold.gph" "$Data/Graphs/liquidity_lead.gph" "$Data/Graphs/liquidity_nickel.gph" ///
+"$Data/Graphs/liquidity_platinum.gph" "$Data/Graphs/liquidity_silver.gph" "$Data/Graphs/liquidity_tin.gph" ///
+"$Data/Graphs/liquidity_zinc.gph" "$Data/Graphs/liquidity_coffee.gph" "$Data/Graphs/liquidity_crudeoil.gph" ///
+"$Data/Graphs/liquidity_naturalgas.gph" "$Data/Graphs/liquidity_oats.gph" "$Data/Graphs/liquidity_soybean.gph" ///
+"$Data/Graphs/liquidity_sugar.gph" 
+graph save "Graph" "$Data/Graphs/liquidity_combination.gph", replace 
