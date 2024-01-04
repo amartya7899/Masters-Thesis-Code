@@ -1,10 +1,10 @@
 *dissertation.do
-
+ops aoaoa a a
 /*******************************************************************************
  Step0: Path & Summary
 *******************************************************************************/
 *Path
-global Data "/Users/Amartya/Desktop/Dr RAP/Miscellaneous/LSE MSc/Dissertation/Data"
+global Data "/Users/Amartya/Desktop/Dr RAP/Miscellaneous/LSE MSc/Dissertation/Data" 
 /*
  Summary: Here we are trying to find the impact of monetary policy on commodity 
          prices using Local Projections - Instrumental Variables approach
@@ -19,7 +19,7 @@ Contents:
  Step4: Asset Prices Merge
  Step5: Instruments Data 
  Step6: Interest Rate Data 
- Step7: Liquidity Data
+ Step7: Liquidity Data.    
  Step8: Final Merge 
  Step9: LP-IV
  Step10: Interest Rate State Dependency 
