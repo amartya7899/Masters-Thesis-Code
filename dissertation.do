@@ -9,7 +9,7 @@ global Data "/Users/Amartya/Desktop/Dr RAP/Miscellaneous/LSE MSc/Dissertation/Da
  Summary: Here we are trying to find the impact of monetary policy on commodity 
          prices using Local Projections - Instrumental Variables approach
 */
-gahajaka
+
 /*
 Contents: 
 
