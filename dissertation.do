@@ -3,7 +3,7 @@
 /*******************************************************************************
  Step0: Path & Summary
 *******************************************************************************/
-*Path
+*Path of the file
 global Data "/Users/Amartya/Desktop/Dr RAP/Miscellaneous/LSE MSc/Dissertation/Data" 
 /*
  Summary: Here we are trying to find the impact of monetary policy on commodity 
